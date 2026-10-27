@@ -1313,7 +1313,14 @@ for (const t of ['grain','paper','kraft','leather','felt','linen','slate','marbl
    ===================================================================== */
 // Paste your Firebase web app config here to turn on login + cloud sync.
 // Leave as null to use local mode (saved only in this browser).
-const FIREBASE_CONFIG = null;
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCHAzpsxsIdL8nVL68JHXAXUYJVuzHNxAs",
+  authDomain: "the-study-ba9a3.firebaseapp.com",
+  projectId: "the-study-ba9a3",
+  storageBucket: "the-study-ba9a3.firebasestorage.app",
+  messagingSenderId: "577910156789",
+  appId: "1:577910156789:web:c1fa802e1efef4932a04bc"
+};
 /* e.g.
 const FIREBASE_CONFIG = {
   apiKey: "…", authDomain: "your-project.firebaseapp.com",
@@ -1324,7 +1331,7 @@ const FIREBASE_CONFIG = {
 // Optional: only this Google account can open the planner.
 const ALLOWED_EMAIL = "sofia.e.kirilov@gmail.com";
 // Optional: Google OAuth client ID to show + sync Google Calendar (setup steps in the chat).
-const GOOGLE_CLIENT_ID = "";
+const GOOGLE_CLIENT_ID = "577910156789-ttmjopfgtse1dho42d4nud208fg33t56.apps.googleusercontent.com";
 
 /* =====================================================================
    HELPERS
