@@ -1809,6 +1809,23 @@ body.is-arranging{overscroll-behavior:none}
 .ord button{width:26px;height:22px;border:1px solid rgba(0,0,0,.18);background:none;border-radius:3px;font-size:9px;color:#5a4b3f;cursor:pointer}
 .ord button:disabled{opacity:.25;cursor:default}
 .ca-n{display:flex;flex-direction:column;align-items:center;gap:8px}
+.drag-h{cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;font-size:20px;line-height:1;color:#8a7a6a;padding:6px 4px;display:inline-block}
+.drag-h:active{cursor:grabbing}
+.ranking{position:relative;z-index:50;opacity:.95;box-shadow:0 18px 40px rgba(0,0,0,.35)!important;transition:none!important}
+body.is-ranking{user-select:none;-webkit-user-select:none;cursor:grabbing}
+.ecf-drag{position:absolute;bottom:8px;right:12px;z-index:3;font-size:18px;color:rgba(40,30,25,.55)}
+.ec-file.darkf .ecf-drag{color:rgba(240,232,220,.6)}
+.aw{align-items:flex-start}
+.aw-rank{font:600 22px var(--serif);color:#8a7a6a;min-width:20px;padding-top:2px}
+.aw .drag-h{margin:-2px -6px 0 -8px}
+.aw-seal{margin-top:2px}
+.dscs{margin-top:8px;border-top:1px solid rgba(0,0,0,.08)}
+.dsc{display:grid;grid-template-columns:120px 1fr auto auto;gap:10px;align-items:baseline;padding:5px 0;border-bottom:1px solid rgba(0,0,0,.06);font:14px/1.4 var(--serif)}
+.dsc label{font:600 10px var(--serif);letter-spacing:.12em;text-transform:uppercase;color:#7a6a5a}
+.dsc .muted{font-style:italic;opacity:.55}
+.dsc i{width:40px}
+.ca-n .drag-h{font-size:18px}
+@media (max-width:600px){.dsc{grid-template-columns:1fr auto auto}.dsc label{grid-column:1/-1}.aw-seal{display:none}}
 </style>
 </head>
 <body>
@@ -2047,23 +2064,30 @@ const SCHEMAS = {
     {k:'def', l:'Definition (one line, dictionary style)', t:'textarea'},
     {k:'hours', l:'Hours / week', t:'number', half:1},
     {k:'weeks', l:'Weeks / year', t:'number', half:1},
-    {k:'tasks', l:'To-dos', t:'checklist'},
-    {k:'awards', l:'Achievements & awards', t:'textarea'},
-    {k:'notes', l:'Notes', t:'textarea'},
-    {k:'_ca', l:'Common App', t:'heading'},
+    {k:'_desc', l:'Descriptions', t:'heading'},
+    {k:'gdesc', l:'General description — no limit, your master version', t:'textarea', max:0},
+    {k:'caDesc', l:'Common App description — 150 characters', t:'textarea', max:150},
+    {k:'ucDesc', l:'UC description — 350 characters', t:'textarea', max:350},
+    {k:'_ca', l:'Common App details', t:'heading'},
     {k:'caType', l:'Activity type', t:'select', o:['', 'Academic', 'Art', 'Athletics: Club', 'Athletics: JV/Varsity', 'Career-Oriented', 'Community Service (Volunteer)', 'Computer/Technology', 'Cultural', 'Dance', 'Debate/Speech', 'Environmental', 'Family Responsibilities', 'Foreign Exchange', 'Foreign Language', 'Internship', 'Journalism/Publication', 'Junior R.O.T.C.', 'LGBT', 'Music: Instrumental', 'Music: Vocal', 'Religious', 'Research', 'Robotics', 'School Spirit', 'Science/Math', 'Social Justice', 'Student Govt./Politics', 'Theater/Drama', 'Work (Paid)', 'Other Club/Activity']},
     {k:'caPos', l:'Position / leadership (blank = role)', t:'text', max:50},
     {k:'caOrg', l:'Organization name (blank = activity)', t:'text', max:100},
-    {k:'caDesc', l:'Description — accomplishments, recognition', t:'textarea', max:150},
     {k:'caTiming', l:'Timing of participation', t:'multi', o:['During school year', 'During school break', 'All year']},
-    {k:'ucDesc', l:'UC activity description (optional)', t:'textarea', max:350}]},
+    {k:'_more', l:'Other', t:'heading'},
+    {k:'tasks', l:'To-dos', t:'checklist'},
+    {k:'awards', l:'Achievements & awards', t:'textarea'},
+    {k:'notes', l:'Notes', t:'textarea'}]},
   awards:{noun:'Award', fields:[
-    {k:'title', l:'Honor / award title', t:'text', req:1, max:100},
+    {k:'title', l:'Honor / award name', t:'text', req:1},
     {k:'level', l:'Level of recognition', t:'select', o:['School', 'State/Regional', 'National', 'International'], half:1},
     {k:'date', l:'Date received', t:'date', half:1},
     {k:'grades', l:'Grade level', t:'grades'},
     {k:'ec', l:'Related activity', t:'select', o:['—'], ecs:1},
-    {k:'notes', l:'Notes (placement, # of competitors, what it was for…)', t:'textarea'}]},
+    {k:'_desc', l:'Descriptions', t:'heading'},
+    {k:'notes', l:'General description — no limit (placement, # of competitors, what it was for)', t:'textarea', max:0},
+    {k:'caTitle', l:'Common App — 100 characters (the form only takes a title; blank = award name)', t:'text', max:100},
+    {k:'ucDesc', l:'UC — eligibility requirements, 250 characters', t:'textarea', max:250},
+    {k:'ucDid', l:'UC — what you did to earn it, 250 characters', t:'textarea', max:250}]},
   recs:{noun:'Recommender', fields:[
     {k:'title', l:'Name', t:'text', req:1},
     {k:'role', l:'Who they are (teacher, mentor…)', t:'text', half:1},
@@ -2103,7 +2127,7 @@ function fieldHTML(f, v){
     case 'heading': return `<div class="f ed-sub"><span class="lbl" style="font-size:13px;letter-spacing:.2em;border-top:1px solid rgba(0,0,0,.15);padding-top:12px;display:block">${f.l.toUpperCase()}</span></div>`;
     case 'multi': return `<div class="f"><span class="lbl">${f.l}</span><div class="multi grades" data-k="${f.k}">${f.o.map(o => `<label class="gchip"><input type="checkbox" value="${esc(o)}" ${(v || []).includes(o) ? 'checked' : ''}>${esc(o)}</label>`).join('')}</div></div>`;
     case 'apps': return `<div class="f"><span class="lbl">${f.l}</span><div class="multi grades" data-k="${f.k}">${S.applications.map(a => `<label class="gchip"><input type="checkbox" value="${a.id}" ${(v || []).includes(a.id) ? 'checked' : ''}>${esc(a.title)}</label>`).join('') || '<em class="muted">add applications first</em>'}</div></div>`;
-    case 'textarea': return `<label class="f">${lab}<textarea name="${f.k}" ${f.big ? 'class="big"' : ''} ${f.max ? `data-max="${f.max}"` : ''}>${esc(v || '')}</textarea>${f.max ? caCount(v, f.max) : ''}</label>`;
+    case 'textarea': return `<label class="f">${lab}<textarea name="${f.k}" ${f.big ? 'class="big"' : ''} ${f.max != null ? `data-max="${f.max}"` : ''}>${esc(v || '')}</textarea>${f.max != null ? caCount(v, f.max) : ''}</label>`;
     case 'select': if (f.ecs) f = {...f, o:['—', ...S.ecs.map(x => x.title)]}; return `<label class="f">${lab}<select name="${f.k}">${f.o.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select></label>`;
     case 'bool': return `<label class="f row" style="margin-top:22px"><input type="checkbox" name="${f.k}" ${v ? 'checked' : ''}> ${f.l}</label>`;
     case 'labels': return `<div class="f"><span class="lbl">${f.l}</span><div class="lblpick" data-k="${f.k}">${(S.appLabels || []).map(L => `<label class="lchip" style="--lc:${L.color}"><input type="checkbox" value="${L.id}" ${(v || []).includes(L.id) ? 'checked' : ''}><span>${esc(L.name)}</span></label>`).join('')}
@@ -2170,7 +2194,7 @@ function openEditor(coll, id, preset = {}){
     lp.querySelector('[data-newlabel]').onclick = add;
     inp.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); add(); } });
   });
-  dlg.addEventListener('input', e => { const m = e.target.dataset?.max; if (!m) return; const c = e.target.parentElement.querySelector('.cac'); if (c) c.outerHTML = caCount(e.target.value, Number(m)); });
+  dlg.addEventListener('input', e => { const m = e.target.dataset?.max; if (m == null) return; const c = e.target.parentElement.querySelector('.cac'); if (c) c.outerHTML = caCount(e.target.value, Number(m)); });
   dlg.querySelectorAll('.es-reuse').forEach(sel => sel.addEventListener('change', async () => {
     if (!sel.value) return; const [aid, j] = sel.value.split(':'); const src = S.applications.find(a => a.id === aid)?.essays?.[+j]; sel.value = '';
     const ta = sel.closest('.es-row').querySelector('.es-a'); if (!src) return;
@@ -3957,7 +3981,7 @@ function viewApplications(el){
 function viewEcs3(el){
   const hrs = S.ecs.reduce((s, x) => s + (Number(x.hours) || 0), 0);
   const items = S.ecs;
-  el.innerHTML = `<p class="ec-count">${S.ecs.length} files${hrs ? ` · ${hrs} hrs / week` : ''}</p>` + (items.length ? `<div class="ec-grid">${items.map((x, i) => {
+  el.innerHTML = `<p class="ec-count">${S.ecs.length} files${hrs ? ` · ${hrs} hrs / week` : ''}</p>` + (items.length ? `<div class="ec-grid" data-rank="ecs">${items.map((x, i) => {
     const def = x.def || (x.awards || '').split('\n')[0] || (x.notes || '').split('\n')[0] || '';
     const gr = (x.grades || []).map(Number).sort((a, b) => a - b);
     const grTxt = !gr.length ? '' : gr.length > 1 && gr.every((g, k) => !k || g === gr[k - 1] + 1) ? `gr. ${gr[0]}–${gr[gr.length - 1]}` : `gr. ${gr.join(', ')}`;
@@ -3967,7 +3991,7 @@ function viewEcs3(el){
       <div class="f-back"><div class="f-tab"><span>${esc(x.title)}</span></div></div>
       <div class="f-front">
         <div class="ecf-no">File ${String(i + 1).padStart(2, '0')}</div>
-        <div class="ecf-move"><button data-ecmove="${x.id}:-1" ${i === 0 ? 'disabled' : ''} aria-label="Move earlier">‹</button><button data-ecmove="${x.id}:1" ${i === items.length - 1 ? 'disabled' : ''} aria-label="Move later">›</button></div>
+        <span class="drag-h ecf-drag" aria-label="Drag to rank">⠿</span>
         <h3 class="dw">${esc(x.title)}</h3>
         <div class="dp">[${esc(x.role || 'member')}] <i>${esc((x.cat || 'activity').toLowerCase())}</i></div><hr>
         ${def ? `<p class="dd">${esc(def)}</p>` : '<p class="dd muted">tap to add a definition</p>'}
@@ -4264,7 +4288,7 @@ VIEWS.applications = el => {
 /* ---------- ACTIVITIES: Folders · Common App ---------- */
 let ecMode = 'folders';
 const CA_TYPES = ['Academic', 'Art', 'Athletics: Club', 'Athletics: JV/Varsity', 'Career-Oriented', 'Community Service (Volunteer)', 'Computer/Technology', 'Cultural', 'Dance', 'Debate/Speech', 'Environmental', 'Family Responsibilities', 'Foreign Exchange', 'Foreign Language', 'Internship', 'Journalism/Publication', 'Junior R.O.T.C.', 'LGBT', 'Music: Instrumental', 'Music: Vocal', 'Religious', 'Research', 'Robotics', 'School Spirit', 'Science/Math', 'Social Justice', 'Student Govt./Politics', 'Theater/Drama', 'Work (Paid)', 'Other Club/Activity'];
-const caCount = (v, max) => { const n = (v || '').length; return `<span class="cac ${n > max ? 'over' : n > max * .9 ? 'near' : ''}">${n}/${max}</span>`; };
+const caCount = (v, max) => { const n = (v || '').length; if (!max) return `<span class="cac">${n} characters</span>`; return `<span class="cac ${n > max ? 'over' : n > max * .9 ? 'near' : ''}">${n}/${max}</span>`; };
 const gradeTxt = x => { const g = (x.grades || []).map(Number).sort((a, b) => a - b); return g.length ? g.join(', ') : '—'; };
 function caText(x, i){
   return [`${i + 1}. ${x.caType || '(activity type)'}`, `Position/Leadership: ${x.caPos || x.role || ''}`, `Organization: ${x.caOrg || x.title}`, `Description: ${x.caDesc || ''}`,
@@ -4272,36 +4296,39 @@ function caText(x, i){
 }
 function viewCommonApp(el){
   const items = S.ecs;
-  el.innerHTML = `<div class="ca-top"><span>${items.length} of 10 Common App slots${items.length > 10 ? ' — only the first 10 count' : ''}</span><button class="btn sm solid" data-cacopyall>Copy all</button></div>` + (items.length ? items.map((x, i) => `
+  el.innerHTML = `<div class="ca-top"><span>${items.length} of 10 Common App slots · drag ⠿ to rank${items.length > 10 ? ' · only the first 10 count' : ''}</span><button class="btn sm solid" data-cacopyall>Copy all</button></div>` + (items.length ? `<div data-rank="ecs">` + items.map((x, i) => `
     <article class="ca-card ${i >= 10 ? 'extra' : ''}" data-c="ecs" data-id="${x.id}">
-      <div class="ca-n">${i + 1}${ordBtns('ecs', x.id, i, items.length)}</div>
+      <div class="ca-n"><span class="drag-h" aria-label="Drag to rank">⠿</span>${i + 1}</div>
       <div class="ca-body">
         <div class="ca-row"><label>Activity type</label><span>${esc(x.caType || '— choose in editor')}</span></div>
         <div class="ca-row"><label>Position / leadership</label><span>${esc(x.caPos || x.role || '')}</span>${caCount(x.caPos || x.role, 50)}<button class="cacp" data-cacp="${x.id}:caPos">copy</button></div>
         <div class="ca-row"><label>Organization</label><span>${esc(x.caOrg || x.title)}</span>${caCount(x.caOrg || x.title, 100)}<button class="cacp" data-cacp="${x.id}:caOrg">copy</button></div>
-        <div class="ca-row tall"><label>Description</label><span>${x.caDesc ? esc(x.caDesc) : '<em class="muted">write a 150-character description in the editor</em>'}</span>${caCount(x.caDesc, 150)}<button class="cacp" data-cacp="${x.id}:caDesc">copy</button></div>
+        <div class="ca-row tall"><label>General</label><span>${x.gdesc ? esc(x.gdesc) : '<em class="muted">not written yet</em>'}</span>${caCount(x.gdesc, 0)}<button class="cacp" data-cacp="${x.id}:gdesc">copy</button></div>
+        <div class="ca-row tall"><label>Common App description</label><span>${x.caDesc ? esc(x.caDesc) : '<em class="muted">not written yet</em>'}</span>${caCount(x.caDesc, 150)}<button class="cacp" data-cacp="${x.id}:caDesc">copy</button></div>
         <div class="ca-grid"><span><label>Grades</label>${gradeTxt(x)}</span><span><label>Timing</label>${(x.caTiming || []).join(', ') || '—'}</span><span><label>Hrs / wk</label>${x.hours || '—'}</span><span><label>Wks / yr</label>${x.weeks || '—'}</span></div>
-        ${x.ucDesc ? `<div class="ca-row tall uc"><label>UC (350)</label><span>${esc(x.ucDesc)}</span>${caCount(x.ucDesc, 350)}<button class="cacp" data-cacp="${x.id}:ucDesc">copy</button></div>` : ''}
-      </div></article>`).join('') : empty('No activities yet.'));
+        <div class="ca-row tall uc"><label>UC description</label><span>${x.ucDesc ? esc(x.ucDesc) : '<em class="muted">not written yet</em>'}</span>${caCount(x.ucDesc, 350)}<button class="cacp" data-cacp="${x.id}:ucDesc">copy</button></div>
+      </div></article>`).join('') + '</div>' : empty('No activities yet.'));
 }
 const _viewEcsFolders = VIEWS.ecs;
 const ordBtns = (coll, id, i, n) => `<div class="ord"><button data-ord="${coll}:${id}:-1" ${i === 0 ? 'disabled' : ''} aria-label="Move up">▲</button><button data-ord="${coll}:${id}:1" ${i === n - 1 ? 'disabled' : ''} aria-label="Move down">▼</button></div>`;
 const AW_LV = ['International', 'National', 'State/Regional', 'School'];
-const awText = (a, i) => [`${i + 1}. ${a.title}`, `Grade level: ${(a.grades || []).map(Number).sort((x, y) => x - y).join(', ') || '—'}`, `Level of recognition: ${a.level || 'School'}`].join('\n');
+const awText = (a, i) => [`${i + 1}. ${a.caTitle || a.title}`, `Grade level: ${(a.grades || []).map(Number).sort((x, y) => x - y).join(', ') || '—'}`, `Level of recognition: ${a.level || 'School'}`].join('\n');
 function viewAwards(el){
   const list = S.awards || [];
-  el.innerHTML = `<div class="ca-top"><span>${list.length} award${list.length === 1 ? '' : 's'} · Common App takes 5${list.length > 5 ? ' — only the top 5 go on the form' : ''}</span>${list.length ? '<button class="btn sm solid" data-awcopyall>Copy top 5</button>' : ''}</div>` + (list.length ? `<div class="aw-list">${list.map((a, i) => {
-    const g = (a.grades || []).map(Number).sort((x, y) => x - y);
+  el.innerHTML = `<div class="ca-top"><span>${list.length} award${list.length === 1 ? '' : 's'} · drag ⠿ to rank · Common App takes 5${list.length > 5 ? ', so only the top 5 go on the form' : ''}</span>${list.length ? '<button class="btn sm solid" data-awcopyall>Copy top 5</button>' : ''}</div>` + (list.length ? `<div class="aw-list" data-rank="awards">${list.map((a, i) => {
+    const g = (a.grades || []).map(Number).sort((x, y) => x - y), ct = a.caTitle || a.title;
+    const row = (lab, v, max, k) => `<div class="dsc"><label>${lab}</label><span class="${v ? '' : 'muted'}">${v ? esc(v) : 'not written yet'}</span>${caCount(v, max)}${v ? `<button class="cacp" data-dcopy="awards:${a.id}:${k}">copy</button>` : '<i></i>'}</div>`;
     return `<article class="aw ${i >= 5 ? 'extra' : ''}" data-c="awards" data-id="${a.id}">
+      <span class="drag-h" aria-label="Drag to rank">⠿</span><div class="aw-rank">${i + 1}</div>
       <div class="aw-seal lv-${(a.level || 'School').split('/')[0].toLowerCase()}"><span>${esc((a.level || 'School').split('/')[0])}</span></div>
       <div class="aw-body"><div class="aw-t">${esc(a.title)}</div>
         <div class="aw-meta">${g.length ? `Grade ${g.join(', ')}` : 'grade —'}${a.date ? ` · ${new Date(a.date + 'T12:00').toLocaleDateString(undefined, {month:'short', year:'numeric'})}` : ''}${a.ec && a.ec !== '—' ? ` · ${esc(a.ec)}` : ''}</div>
-        ${a.notes ? `<div class="aw-n">${esc(a.notes)}</div>` : ''}</div>
-      <div class="aw-r">${caCount(a.title, 100)}<button class="cacp" data-awcp="${a.id}">copy</button></div>${ordBtns('awards', a.id, i, list.length)}</article>`; }).join('')}</div>` : empty('No awards yet. Tap + New to add one.'));
+        <div class="dscs">${row('General', a.notes, 0, 'notes')}${row('Common App', ct, 100, a.caTitle ? 'caTitle' : 'title')}${row('UC · eligibility', a.ucDesc, 250, 'ucDesc')}${row('UC · what you did', a.ucDid, 250, 'ucDid')}</div></div></article>`; }).join('')}</div>` : empty('No awards yet. Tap + New to add one.'));
 }
 document.getElementById('bookBody').addEventListener('click', e => {
   const c = e.target.closest('[data-awcp]'), all = e.target.closest('[data-awcopyall]');
   if (c){ e.stopPropagation(); copyText(S.awards.find(a => a.id === c.dataset.awcp)?.title || ''); }
+  const dc = e.target.closest('[data-dcopy]'); if (dc){ e.stopPropagation(); const [coll, id, k] = dc.dataset.dcopy.split(':'); copyText(S[coll].find(x => x.id === id)?.[k] || ''); return; }
   const o = e.target.closest('[data-ord]'); if (o){ e.stopPropagation(); const [coll, id, d] = o.dataset.ord.split(':'), arr = S[coll], i = arr.findIndex(x => x.id === id), j = i + Number(d);
     if (i >= 0 && j >= 0 && j < arr.length){ [arr[i], arr[j]] = [arr[j], arr[i]]; commit(); } }
   if (all){ e.stopPropagation(); copyText(S.awards.slice(0, 5).map(awText).join('\n\n')); }
@@ -4403,6 +4430,58 @@ function remBtn(){ const b = document.getElementById('remBtn'); if (b) b.textCon
 setInterval(checkReminders, 30 * 60 * 1000);
 
 VIEWS.messages = viewMessages;
+/* ---------- drag to rank (activities + awards) ---------- */
+let rankDrag = null, rankJustDropped = 0;
+function scrollParent(n){ while (n && n !== document.body){ const cs = getComputedStyle(n); if (/(auto|scroll)/.test(cs.overflowY) && n.scrollHeight > n.clientHeight) return n; n = n.parentElement; } return document.scrollingElement; }
+document.getElementById('bookBody').addEventListener('pointerdown', e => {
+  const h = e.target.closest('.drag-h'); if (!h) return;
+  const box = h.closest('[data-rank]'), item = h.closest('[data-id]'); if (!box || !item) return;
+  e.preventDefault(); e.stopPropagation();
+  const r = item.getBoundingClientRect();
+  rankDrag = {box, item, coll:box.dataset.rank, gx:e.clientX - r.left, gy:e.clientY - r.top, x:e.clientX, y:e.clientY, sc:scrollParent(box), moved:false};
+  item.classList.add('ranking'); document.body.classList.add('is-ranking');
+  try { h.setPointerCapture(e.pointerId); } catch(_){}
+  rankFrame();
+}, true);
+function rankPlace(){
+  const d = rankDrag; if (!d) return;
+  d.item.style.transform = ''; const n = d.item.getBoundingClientRect();
+  d.item.style.transform = `translate(${d.x - d.gx - n.left}px,${d.y - d.gy - n.top}px) rotate(-1deg)`;
+}
+function rankFrame(){
+  const d = rankDrag; if (!d) return;
+  const sr = d.sc.getBoundingClientRect ? d.sc.getBoundingClientRect() : {top:0, bottom:innerHeight};
+  const top = Math.max(sr.top, 0), bot = Math.min(sr.bottom, innerHeight);
+  if (d.y < top + 70) d.sc.scrollTop -= Math.ceil((top + 70 - d.y) / 6); else if (d.y > bot - 70) d.sc.scrollTop += Math.ceil((d.y - bot + 70) / 6);
+  rankPlace(); requestAnimationFrame(rankFrame);
+}
+document.addEventListener('pointermove', e => {
+  const d = rankDrag; if (!d) return;
+  d.x = e.clientX; d.y = e.clientY; d.moved = true;
+  const kids = [...d.box.children].filter(k => k.dataset.id);
+  const over = document.elementsFromPoint(d.x, d.y).map(n => n.closest?.('[data-id]')).find(n => n && n !== d.item && n.parentElement === d.box);
+  if (over){
+    const a = kids.indexOf(d.item), b = kids.indexOf(over), r = over.getBoundingClientRect();
+    const grid = getComputedStyle(d.box).display === 'grid' || r.width < d.box.clientWidth * .7;
+    const after = grid ? a < b : d.y > r.top + r.height / 2;
+    if (after && over.nextSibling !== d.item) d.box.insertBefore(d.item, over.nextSibling);
+    else if (!after && over.previousSibling !== d.item) d.box.insertBefore(d.item, over);
+    rankPlace();
+  }
+});
+function rankEnd(){
+  const d = rankDrag; if (!d) return; rankDrag = null;
+  d.item.classList.remove('ranking'); d.item.style.transform = ''; document.body.classList.remove('is-ranking');
+  if (!d.moved) return;
+  rankJustDropped = Date.now();
+  const ids = [...d.box.children].map(k => k.dataset.id).filter(Boolean), arr = S[d.coll];
+  const pos = new Map(ids.map((id, i) => [id, i]));
+  arr.sort((a, b) => (pos.get(a.id) ?? 1e9) - (pos.get(b.id) ?? 1e9));
+  commit();
+}
+document.addEventListener('pointerup', rankEnd); document.addEventListener('pointercancel', rankEnd);
+document.getElementById('bookBody').addEventListener('click', e => { if (Date.now() - rankJustDropped < 400 || e.target.closest('.drag-h')){ e.stopPropagation(); e.preventDefault(); } }, true);
+
 /* ---------- clicks for everything above ---------- */
 document.getElementById('bookBody').addEventListener('click', e => { if (featClick(e)) e.stopPropagation(); }, true);
 function featClick(e){
